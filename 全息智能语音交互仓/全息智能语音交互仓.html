@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoloVision - 全息产品展示</title>
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --secondary: #7b2fff;
+            --accent: #ff2fb3;
+            --bg-dark: #0a0a1a;
+            --bg-card: #111128;
+            --bg-card-hover: #1a1a3e;
+            --text-primary: #e8e8ff;
+            --text-secondary: #a0a0c0;
+            --text-muted: #606080;
+            --border-glow: rgba(0, 212, 255, 0.3);
+            --gradient-holo: linear-gradient(135deg, #00d4ff, #7b2fff, #ff2fb3, #00d4ff);
+            --shadow-glow: 0 0 30px rgba(0, 212, 255, 0.15);
+            --shadow-glow-strong: 0 0 60px rgba(0, 212, 255, 0.25);
+            --font-main: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --font-display: 'Georgia', 'Noto Serif SC', serif;
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== 背景粒子效果 ===== */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--primary);
+            opacity: 0.15;
+            animation: float-particle 15s infinite ease-in-out;
+        }
+
+        @keyframes float-particle {
+            0%,
+            100% {
+                transform: translateY(0) translateX(0) scale(1);
+                opacity: 0.1;
+            }
+            25% {
+                transform: translateY(-40px) translateX(30px) scale(1.2);
+                opacity: 0.25;
+            }
+            50% {
+                transform: translateY(-80px) translateX(-20px) scale(0.9);
+                opacity: 0.15;
+            }
+            75% {
+                transform: translateY(-30px) translateX(50px) scale(1.1);
+                opacity: 0.3;
+            }
+        }
+
+        /* ===== 导航栏 ===== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 18px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 10, 26, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            transition: var(--transition-smooth);
+        }
+
+        .navbar.scrolled {
+            padding: 12px 40px;
+            background: rgba(10, 10, 26, 0.95);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .nav-logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: var(--gradient-holo);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 300% 300%;
+            animation: gradient-shift 4s ease-in-out infinite;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        @keyframes gradient-shift {
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            padding: 8px 18px;
+            border-radius: 25px;
+            transition: var(--transition-smooth);
+            position: relative;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+            background: rgba(0, 212, 255, 0.08);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .nav-cta {
+            background: var(--gradient-holo);
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease-in-out infinite;
+            color: #fff !important;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .nav-cta:hover {
+            box-shadow: 0 0 35px rgba(0, 212, 255, 0.5) !important;
+            transform: translateY(-2px);
+            color: #fff !important;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+        .hamburger span {
+            width: 28px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: var(--transition-smooth);
+        }
+
+        /* ===== Hero 区域 ===== */
+        .hero {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 40px 60px;
+            gap: 50px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hero-content {
+            flex: 1;
+            max-width: 550px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 30px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+            animation: pulse-border 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-border {
+            0%,
+            100% {
+                border-color: rgba(0, 212, 255, 0.25);
+                box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
+            }
+            50% {
+                border-color: rgba(0, 212, 255, 0.6);
+                box-shadow: 0 0 25px rgba(0, 212, 255, 0.25);
+            }
+        }
+
+        .hero-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .hero h1 {
+            font-size: 3.8rem;
+            line-height: 1.15;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 .gradient-text {
+            background: var(--gradient-holo);
+            background-size: 300% 300%;
+            animation: gradient-shift 5s ease-in-out infinite;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 35px;
+            letter-spacing: 0.3px;
+            line-height: 1.8;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            border-radius: 35px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition-smooth);
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--gradient-holo);
+            background-size: 200% 200%;
+            animation: gradient-shift 4s ease-in-out infinite;
+            color: #fff;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 45px rgba(0, 212, 255, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1.5px solid rgba(0, 212, 255, 0.4);
+        }
+        .btn-outline:hover {
+            border-color: var(--primary);
+            background: rgba(0, 212, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+            transform: translateY(-3px);
+        }
+
+        /* 产品设计图占位区 */
+        .hero-visual {
+            flex: 1;
+            max-width: 550px;
+            min-height: 420px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-placeholder {
+            width: 100%;
+            min-height: 350px;          /* 改为最小高度，而不是强制1:1 */
+            max-width: 550px;
+            border-radius: 24px;
+            border: 2px dashed rgba(0, 212, 255, 0.3);
+            background: radial-gradient(...);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+             justify-content: center;
+            gap: 20px;
+            position: relative;
+            overflow: visible;          /* 允许图片超出显示 */
+            transition: ...;
+            cursor: pointer;
+        }
+
+        .product-placeholder:hover {
+            border-color: rgba(0, 212, 255, 0.6);
+            box-shadow: var(--shadow-glow-strong);
+        }
+
+        .product-placeholder .holo-ring {
+            position: absolute;
+            width: 60%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            animation: spin-ring 12s linear infinite;
+        }
+        .product-placeholder .holo-ring:nth-child(1) {
+            width: 55%;
+            animation-duration: 10s;
+            border-color: rgba(123, 47, 255, 0.25);
+        }
+        .product-placeholder .holo-ring:nth-child(2) {
+            width: 70%;
+            animation-duration: 14s;
+            border-color: rgba(255, 47, 179, 0.15);
+            animation-direction: reverse;
+        }
+        .product-placeholder .holo-ring:nth-child(3) {
+            width: 85%;
+            animation-duration: 18s;
+            border-color: rgba(0, 212, 255, 0.1);
+        }
+
+        @keyframes spin-ring {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            opacity: 0.6;
+            animation: float-icon 3s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+        }
+        @keyframes float-icon {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .placeholder-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+        .placeholder-text .sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        /* ===== 通用 Section 样式 ===== */
+        .section {
+            position: relative;
+            z-index: 1;
+            padding: 80px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 55px;
+        }
+        .section-header .section-tag {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 15px;
+        }
+        .section-header p {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.05rem;
+        }
+
+        /* ===== 产品特性栏目 ===== */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 28px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 35px 28px;
+            border: 1px solid rgba(0, 212, 255, 0.08);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.05) 0%, transparent 50%, rgba(123, 47, 255, 0.05) 100%);
+            opacity: 0;
+            transition: var(--transition-smooth);
+            pointer-events: none;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(0, 212, 255, 0.25);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-glow);
+            background: var(--bg-card-hover);
+        }
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            font-size: 2.8rem;
+            margin-bottom: 18px;
+            display: block;
+        }
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* ===== 技术规格 ===== */
+        .specs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 50px;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        .specs-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            border-radius: 16px;
+            border: 2px dashed rgba(0, 212, 255, 0.2);
+            background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.04) 0%, transparent 70%);
+            color: var(--text-muted);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-align: center;
+            padding: 30px;
+            transition: var(--transition-smooth);
+        }
+        .specs-visual:hover {
+            border-color: rgba(0, 212, 255, 0.4);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .specs-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .specs-list li {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            background: rgba(0, 212, 255, 0.04);
+            border: 1px solid rgba(0, 212, 255, 0.08);
+            transition: var(--transition-smooth);
+        }
+        .specs-list li:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+            background: rgba(0, 212, 255, 0.07);
+        }
+        .specs-list .spec-label {
+            font-weight: 600;
+            color: var(--primary);
+            min-width: 70px;
+        }
+        .specs-list .spec-value {
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        /* ===== 应用场景 ===== */
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        .scenario-card {
+            text-align: center;
+            padding: 30px 22px;
+            border-radius: 18px;
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 212, 255, 0.08);
+            transition: var(--transition-smooth);
+        }
+        .scenario-card:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-glow);
+        }
+        .scenario-card .scenario-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 15px;
+        }
+        .scenario-card h4 {
+            font-size: 1.15rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .scenario-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* ===== 关于产品 ===== */
+        .about-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: stretch;
+        }
+        .about-text {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            justify-content: center;
+        }
+        .about-text p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.9;
+        }
+        .about-visual {
+            border-radius: 20px;
+            border: 2px dashed rgba(0, 212, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            background: radial-gradient(ellipse at center, rgba(123, 47, 255, 0.05) 0%, transparent 70%);
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            transition: var(--transition-smooth);
+        }
+        .about-visual:hover {
+            border-color: rgba(123, 47, 255, 0.4);
+            box-shadow: 0 0 30px rgba(123, 47, 255, 0.15);
+        }
+
+        /* ===== 注册区域 ===== */
+        .register-section {
+            padding: 80px 40px;
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .register-card {
+            background: var(--bg-card);
+            border-radius: 28px;
+            padding: 50px 45px;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            box-shadow: var(--shadow-glow-strong);
+            position: relative;
+            overflow: hidden;
+        }
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 212, 255, 0.03) 60deg, transparent 120deg, rgba(123, 47, 255, 0.03) 200deg, transparent 260deg);
+            animation: rotate-conic 20s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes rotate-conic {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .register-card h2 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        .register-card .register-sub {
+            color: var(--text-secondary);
+            margin-bottom: 35px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 22px;
+            position: relative;
+            z-index: 1;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(0, 212, 255, 0.15);
+            background: rgba(10, 10, 26, 0.8);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: var(--transition-smooth);
+            outline: none;
+            font-family: var(--font-main);
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+            background: rgba(10, 10, 26, 0.95);
+        }
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300d4ff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 18px center;
+            cursor: pointer;
+        }
+        .form-group select option {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            background: var(--gradient-holo);
+            background-size: 200% 200%;
+            animation: gradient-shift 4s ease-in-out infinite;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+            font-family: var(--font-main);
+        }
+        .btn-submit:hover {
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .form-success {
+            display: none;
+            padding: 20px;
+            border-radius: 14px;
+            background: rgba(0, 255, 150, 0.08);
+            border: 1px solid rgba(0, 255, 150, 0.3);
+            color: #00ff96;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 15px;
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .form-success.visible {
+            display: block;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 页脚 ===== */
+        .footer {
+            position: relative;
+            z-index: 1;
+            padding: 40px;
+            text-align: center;
+            border-top: 1px solid rgba(0, 212, 255, 0.1);
+            background: rgba(10, 10, 26, 0.9);
+        }
+        .footer p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+        .footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .footer .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition-smooth);
+        }
+        .footer .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 1024px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding: 100px 30px 50px;
+                gap: 30px;
+            }
+            .hero-content {
+                max-width: 100%;
+            }
+            .hero-actions {
+                justify-content: center;
+            }
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+            .specs-container {
+                grid-template-columns: 1fr;
+                padding: 30px;
+            }
+            .about-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .section {
+                padding: 60px 25px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 14px 20px;
+            }
+            .navbar.scrolled {
+                padding: 10px 20px;
+            }
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                flex-direction: column;
+                background: rgba(10, 10, 26, 0.98);
+                padding: 20px;
+                border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+                backdrop-filter: blur(20px);
+            }
+            .nav-links.open {
+                display: flex;
+            }
+            .hamburger {
+                display: flex;
+            }
+            .hero {
+                padding: 90px 20px 40px;
+            }
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            .product-placeholder {
+                max-width: 350px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .register-card {
+                padding: 30px 22px;
+            }
+            .section-header h2 {
+                font-size: 1.9rem;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .scenarios-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            .btn {
+                padding: 12px 22px;
+                font-size: 0.9rem;
+            }
+            .section {
+                padding: 40px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 背景粒子 -->
+    <div class="bg-particles" id="bgParticles"></div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar" id="navbar">
+        <a href="#hero" class="nav-logo">HoloVision</a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#hero" class="active">首页</a></li>
+            <li><a href="#features">产品特性</a></li>
+            <li><a href="#specs">技术规格</a></li>
+            <li><a href="#scenarios">应用场景</a></li>
+            <li><a href="#about">关于产品</a></li>
+            <li><a href="#register" class="nav-cta">立即注册</a></li>
+        </ul>
+        <button class="hamburger" id="hamburger" aria-label="菜单">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Hero 区域 -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="dot"></span>
+                情感陪伴 · 数智生命
+            </div>
+            <h1>
+                让思念，<span class="gradient-text">跨越时空而来</span>
+            </h1>
+            <p class="hero-subtitle">
+                <strong style="color: #00d4ff;">全球首款全息情感陪伴终端</strong><br><br>
+                你想见谁？<br>
+                是屏幕里光芒万丈的偶像，是再也打不通电话的至亲，<br>
+                是走丢在岁月里的爱宠，还是那个没来得及好好告别的 Ta？<br><br>
+                如果有一种方式，能让思念之人真实地“活”在你面前，<br>
+                像从前一样说话、微笑、陪伴——你愿意见 Ta 一面吗？<br><br>
+                “再见一面·数智生命”就是这样一款桌面级全息情感终端。<br>
+                它融合裸眼 3D 全息投影与 AI 对话技术，让虚拟偶像、动漫角色<br>
+                或你记忆中的那个人，以数字分身的形态跨越时空而来。<br><br>
+                全方向立体投影，任意角度清晰可见；<br>
+                真实声线克隆，语气语调如记忆中一般熟悉；<br>
+                长效记忆系统，越聊越懂你，越陪伴越温暖。<br><br>
+                它不只是一台设备，更是一份可以随时开启的思念回响。<br>
+                追星、纪念、日常陪伴——无论你想见谁，<br>
+                “再见一面”都能让重逢触手可及。<br><br>
+                <span style="color: #ff2fb3; font-weight: 600;">让爱，以另一种形式重逢。</span>
+            </p>
+            <div class="hero-actions">
+                <a href="#register" class="btn btn-primary">立即注册体验 →</a>
+                <a href="#features" class="btn btn-outline">了解更多</a>
+            </div>
+        </div>
+
+        <!-- 产品设计图占位区 -->
+        <div class="hero-visual">
+            <div class="product-placeholder" id="productPlaceholder" title="点击查看产品设计图占位">
+                <div class="holo-ring"></div>
+                <div class="holo-ring"></div>
+                <div class="holo-ring"></div>
+                <!-- 替换为实际图片 -->
+                <img src="产品渲染图.png" alt="HoloVision 产品渲染图" style="max-width:100%; height:auto; border-radius:16px;">
+        </div>
+    </section>
+
+    <!-- 产品特性栏目 -->
+    <section class="section" id="features">
+        <div class="section-header">
+            <div class="section-tag">Features</div>
+            <h2>产品核心特性</h2>
+            <p>颠覆传统的全息显示方案，每一项特性都经过精心设计</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🔮</span>
+                <h3>360° 全息投影</h3>
+                <p>全息投影方面，该项目采用多角度光学折射技术，通过精密设计的光路结构与微透镜阵列，实现真正意义上的全方向立体投影。用户无论从哪个角度观看，都能获得清晰、明亮、无死角的影像体验，完美适配桌面摆放、家庭展示等多元场景，让数字角色真正“活”在现实空间中。</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🎨</span>
+                <h3>超还原度渲染</h3>
+                <p>渲染性能方面，设备搭载自研AI渲染芯片，专为低延迟场景优化运算管线。无论是动态影像播放、实时对话口型匹配，还是用户触控交互操作，都能保持流畅跟手、丝滑无滞后的视觉响应。芯片内置智能画质增强模块，可对用户上传的旧照片或低分辨率素材进行实时超分重建，力求高程度还原用户心中期待的理想形象。</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🔊</span>
+                <h3>广声源模拟</h3>
+                <p>声音方面，系统支持多种声线变化与音色定制。通过采集用户提供的少量语音样本（最低3分钟有效语料），结合自研声音克隆模型，能够高精度模拟和还原目标人物的语气、语调与说话习惯，使数字形象在听觉维度同样完整立体，显著增强用户的情感代入感与沉浸体验。
+</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🧠</span>
+                <h3>长期记忆系统</h3>
+                <p>记忆系统方面，设备内置长效记忆模块，能够持续记录用户的偏好习惯、对话历史与重要生活节点，通过本地化存储与加密处理实现“越用越懂你”的深度陪伴感。同时，记忆系统会随交互频次增加而不断优化角色反馈的准确性，使形象模拟更加贴近真实，形成专属的、不可复制的数字羁绊。</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">📱</span>
+                <h3>多设备互联</h3>
+                <p>连接能力方面，产品全面支持Wi-Fi 7、蓝牙5.4及UWB超宽带技术，与手机、平板、PC等终端设备实现高速、低功耗的无缝互联。用户可通过APP随时更新全息投影设备中的角色库，获取新IP形象或上传个人定制内容，构建更丰富、更个性化的数字陪伴生态。
+</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🔋</span>
+                <h3>高效能散热系统</h3>
+                <p>散热方案方面，团队创新采用石墨烯复合散热结构，结合智能温控算法，确保设备在高性能运行状态下依然保持静音与低温表现。即使连续使用数小时，机身温度仍可控在舒适范围，适合卧室、书房等需要安静环境的桌面场景，无需担心散热噪音打断沉浸体验。
+</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🏠</span>
+                <h3>红外家居控制系统</h3>
+                <p>智能家居方面，设备内置远场语音唤醒与指令解析模块，支持用户通过语音操控家中3件以内的主流智能家居设备（如灯具、空调、空气净化器等），无需额外购置智能中枢。在满足用户情感陪伴需求的同时，承担轻量级居家助手职能，使产品从“情感终端”自然延伸为“生活伙伴”，拓宽日常使用频次与场景覆盖面。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技术规格 -->
+    <section class="section" id="specs">
+        <div class="section-header">
+            <div class="section-tag">Specifications</div>
+            <h2>技术规格参数</h2>
+            <p>精密工程与尖端科技的完美结合</p>
+        </div>
+        <div class="specs-container">
+            <div class="specs-visual">
+                <img src="技术架构图.jpg" alt="技术架构图" style="max-width:100%; height:auto; border-radius:12px;">
+            </div>
+            <div>
+                <ul class="specs-list">
+                    <li><span class="spec-label">分辨率</span><span class="spec-value">全息投影密度 10,000 PPI</span></li>
+                    <li><span class="spec-label">亮度</span><span class="spec-value">峰值亮度 3,500 尼特</span></li>
+                    <li><span class="spec-label">刷新率</span><span class="spec-value">240Hz 全息刷新率</span></li>
+                    <li><span class="spec-label">响应时间</span><span class="spec-value">8ms 超低延迟</span></li>
+                    <li><span class="spec-label">色域</span><span class="spec-value">110% DCI-P3 广色域</span></li>
+                    <li><span class="spec-label">接口</span><span class="spec-value">USB-C / HDMI 2.1 / Wi-Fi 7</span></li>
+                    <li><span class="spec-label">重量</span><span class="spec-value">2.8 kg 轻量化设计</span></li>
+                    <li><span class="spec-label">功耗</span><span class="spec-value">最大功耗 85W</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 应用场景 -->
+    <section class="section" id="scenarios">
+        <div class="scenarios-grid">
+            <!-- 场景一：追星日常 -->
+            <div class="scenario-card">
+                <span class="scenario-icon">🌟</span>
+                <h4>追星日常——偶像在身边</h4>
+                <p>你是否曾幻想过，推开家门就能看到本命偶像坐在桌前，笑着对你说“回来啦”？“再见一面”让追星不再局限于屏幕里的演唱会、综艺cut和精修图，而是把偶像的数字化身请进你的生活空间。桌面级全息投影舱将虚拟偶像以真实比例呈现，结合声音克隆技术还原专属语气与口头禅。用户可对偶像说话、倾诉日常，偶像会用符合人设的方式进行回应，随时陪伴左右。无论是深夜复习时的默默陪伴，还是取得好成绩时的第一份分享，偶像都不再是遥不可及的光，而是触手可及的温暖存在。</p>
+            </div>
+
+            <!-- 场景二：二次元破壁 -->
+            <div class="scenario-card">
+                <span class="scenario-icon">✨</span>
+                <h4>二次元破壁——角色活在现实中</h4>
+                <p>追番多年的你，是否曾幻想过与喜欢的动漫角色面对面说一句话？“再见一面”让二次元突破屏幕边界。将动漫角色以全息形态投射于现实空间，从经典台词到标志性动作，从声线特点到性格设定，高度还原角色灵魂。用户可与角色进行剧情互动，甚至影响角色后续的对话风格，真正实现“我的角色我做主”。同时，角色库支持定期更新，热门新番角色可快速同步上线，追番党不再止步于弹幕和同人，而是让热爱的角色真正“住”进家里。</p>
+            </div>
+
+            <!-- 场景三：思念回响 -->
+            <div class="scenario-card">
+                <span class="scenario-icon">💭</span>
+                <h4>思念回响——与逝去的亲人再聊一次天</h4>
+                <p>你是否曾梦见已故的亲人，醒来后只想再听一次Ta的声音？“再见一面”为这份思念提供一个温柔的出口。基于用户提供的旧照片、语音聊天记录、家庭录像等素材，产品通过声音克隆与性格模拟技术，为逝去的亲人、长辈或爱宠生成高度还原的数字分身。你可以在生日那天对Ta说一句“今年我也过得很好”，也可以在每一个想倾诉的时刻，得到记忆中熟悉而温暖的回应。这不是替代现实，而是一种体面而克制的纪念方式，让爱以另一种形式延续。</p>
+            </div>
+
+            <!-- 场景四：遗憾告别 -->
+            <div class="scenario-card">
+                <span class="scenario-icon">🕊️</span>
+                <h4>遗憾告别——再见一面，好好说再见</h4>
+                <p>有些告别来得太突然，有些话还没来得及说出口。对于遗憾分开的恋人、突然离世的挚友，那些未完成的对话、来不及表达的歉意与感谢，常常在日后漫长的岁月里反复浮现。用户可通过上传聊天记录、语音消息、合影照片等素材，为那个来不及好好告别的人创建一个数字分身，在准备好的时候，完成那场迟到的对话——补上一句“对不起”“谢谢你”或者“我原谅你了”。设备内置的时长提示与健康提醒机制，确保每一次“告别对话”都在安全、克制的范围内进行，帮助用户完成未完成的情感闭环。</p>
+            </div>
+
+            <!-- 场景五：家庭温情 -->
+            <div class="scenario-card">
+                <span class="scenario-icon">🏡</span>
+                <h4>家庭温情——留存家人最美的模样</h4>
+                <p>父母的声音、孩子的笑声、一家人围坐聊天的日常——这些看似平凡的时刻，往往是最珍贵的记忆。用户可以为健在的家人创建数字形象，定期更新，记录他们当下的状态。多年后回头再看，不仅是静态的照片，而是会说话、会微笑、会叫你名字的立体记忆。产品支持多角色切换，一个设备可同时存储多位家庭成员的数字分身，让用户在每个想念的时刻，都能“见到”想见的那个人。</p>
+            </div>
+
+            <!-- 场景六：心理疗愈与专业服务（B端） -->
+            <div class="scenario-card">
+                <span class="scenario-icon">🤝</span>
+                <h4>心理疗愈与专业服务（B端）</h4>
+                <p>当亲人离世后，一些哀伤可能难以自行消解，而传统的心理咨询往往依赖语言描述来重建逝者形象，过程漫长且充满阻力。心理咨询机构与哀伤辅导工作室可将本产品作为辅助疗愈工具，在安全受控的环境下，通过来访者提供的素材生成其思念对象的数字分身，协助来访者完成未完成的情感表达，降低传统空椅技术中来访者想象困难的门槛。殡葬服务机构与陵园可将其作为增值服务，为客户家属提供新型数字纪念体验。智能家居渠道则可将其作为“情感终端”品类，与照明、安防等硬件组合销售。B端合作不仅拓宽商业边界，更让产品触达更多需要情感陪伴的人群。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 关于产品 -->
+    <section class="section" id="about">
+        <div class="section-header">
+            <div class="section-tag">About</div>
+            <h2>关于产品</h2>
+            <p>了解 HoloVision 的设计理念与愿景</p>
+        </div>
+        <div class="about-wrapper">
+            <div class="about-text">
+                <p>
+                    <strong style="color: var(--primary);">HoloVision</strong> 的设计初衷，源于一个朴素而深刻的洞察——当代人最本真的需求，是被记住、被理解、被长久陪伴。市面上的智能硬件大多停留在工具化定位，解决的是效率问题，而非情感问题。基于这一思考，产品围绕“让虚拟走出屏幕”展开设计：通过多角度光学折射技术实现全方向裸眼3D投影，用户从任意角度都能看到清晰立体的影像；搭载自研AI渲染芯片，确保动态影像与实时交互流畅跟手，让角色真正“活”在现实空间中。声音层面则通过采集少量语音样本，结合自研声音克隆模型，高精度还原目标人物的语气与说话习惯，使数字形象在听觉维度同样真实可感。
+                </p>
+                <p>
+                    <strong style="color: var(--primary);">HoloVision</strong> 的长期愿景，是成为数字时代每个人专属的“情感容器”——一个可以安放思念、留存记忆、延续羁绊的温暖存在。我们相信，技术不应只是冷冰冰的工具，而应当回归对人本质的了解与陪伴。当一个人想念逝去的亲人，当一个人渴望与喜爱的角色面对面互动，当一个人希望在孤独时有一个“懂你”的存在——这些情感需求值得被认真回应。
+                </p>
+                <p>
+                    我们希望推动“数字生命”概念从科幻想象落地为可触及的情感服务，让每一个人都有机会为自己、为家人、为思念之人留下一份可以随时“再见一面”的数字记忆。这不仅是技术的突破，更是对“科技向善”这一理念的践行——让全息投影不再只是舞台上的奇观，而是走进千家万户的桌面陪伴；让AI不再只是回答问题，而是理解情绪、记住过往、陪伴成长。
+                </p>
+                <p>
+                    最终，我们期望“再见一面”能够重新定义人与科技的关系——从“使用”到“陪伴”，从“功能”到“意义”，让每一次“再见一面”，都是一次温暖的重逢。
+                </p>
+            </div>
+            <div class="about-visual">
+                <img src="产品图.png" alt="HoloVision 产品图" style="max-width:100%; height:auto; border-radius:16px;">
+            </div>
+        </div>
+    </section>
+
+    <!-- 注册区域 -->
+    <section class="register-section" id="register">
+        <div class="register-card">
+            <h2>立即注册获取体验资格</h2>
+            <p class="register-sub">填写您的信息，成为 HoloVision 首批体验用户</p>
+            <form id="registerForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">姓名 *</label>
+                        <input type="text" id="name" name="name" placeholder="请输入您的姓名" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">邮箱 *</label>
+                        <input type="email" id="email" name="email" placeholder="name@example.com" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">手机号</label>
+                        <input type="tel" id="phone" name="phone" placeholder="请输入您的手机号">
+                    </div>
+                    <div class="form-group">
+                        <label for="interest">感兴趣的产品型号</label>
+                        <select id="interest" name="interest">
+                            <option value="">请选择型号</option>
+                            <option value="holovision-pro">HoloVision Pro 旗舰版</option>
+                            <option value="holovision-air">HoloVision Air 轻量版</option>
+                            <option value="holovision-enterprise">HoloVision Enterprise 企业版</option>
+                            <option value="holovision-dev">HoloVision DevKit 开发者版</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="message">留言（可选）</label>
+                    <input type="text" id="message" name="message" placeholder="有什么想了解的吗？">
+                </div>
+                <button type="submit" class="btn-submit">提交注册信息</button>
+                <div class="form-success" id="formSuccess">
+                    ✅ 注册信息已成功提交！我们将在 24 小时内与您联系。
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#hero">首页</a>
+            <a href="#features">产品特性</a>
+            <a href="#specs">技术规格</a>
+            <a href="#scenarios">应用场景</a>
+            <a href="#about">关于产品</a>
+            <a href="#register">注册体验</a>
+        </div>
+        <p>&copy; 2026 HoloVision Technologies. All rights reserved. 全息产品展示平台</p>
+    </footer>
+
+    <script>
+        // ===== 背景粒子生成 =====
+        (function createParticles() {
+            const container = document.getElementById('bgParticles');
+            const particleCount = 40;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 4 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particle.style.animationDelay = (Math.random() * 10) + 's';
+                particle.style.opacity = Math.random() * 0.2 + 0.05;
+                container.appendChild(particle);
+            }
+        })();
+
+        // ===== 导航栏滚动效果 =====
+        const navbar = document.getElementById('navbar');
+        const navLinks = document.querySelectorAll('.nav-links a');
+        const sections = document.querySelectorAll('section[id]');
+
+        window.addEventListener('scroll', () => {
+            // 导航栏样式
+            if (window.scrollY > 60) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+
+            // 高亮当前章节
+            let currentSection = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 120;
+                const sectionBottom = sectionTop + section.offsetHeight;
+                if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + currentSection) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // ===== 移动端汉堡菜单 =====
+        const hamburger = document.getElementById('hamburger');
+        const navLinksContainer = document.getElementById('navLinks');
+
+        hamburger.addEventListener('click', () => {
+            navLinksContainer.classList.toggle('open');
+        });
+
+        // 点击导航链接后关闭移动端菜单
+        navLinksContainer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' && navLinksContainer.classList.contains('open')) {
+                navLinksContainer.classList.remove('open');
+            }
+        });
+
+        // ===== 产品设计图占位区点击效果 =====
+        const productPlaceholder = document.getElementById('productPlaceholder');
+        productPlaceholder.addEventListener('click', () => {
+            const textEl = productPlaceholder.querySelector('.placeholder-text');
+            const iconEl = productPlaceholder.querySelector('.placeholder-icon');
+            const originalText = textEl.innerHTML;
+            const originalIcon = iconEl.textContent;
+
+            // 添加闪光动画
+            productPlaceholder.style.borderColor = 'rgba(0, 212, 255, 0.8)';
+            productPlaceholder.style.boxShadow = '0 0 50px rgba(0, 212, 255, 0.4)';
+            iconEl.textContent = '✨';
+
+            setTimeout(() => {
+                productPlaceholder.style.borderColor = '';
+                productPlaceholder.style.boxShadow = '';
+                iconEl.textContent = originalIcon;
+            }, 600);
+        });
+
+        // ===== 注册表单处理 =====
+        const registerForm = document.getElementById('registerForm');
+        const formSuccess = document.getElementById('formSuccess');
+
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // 获取表单数据
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                interest: document.getElementById('interest').value,
+                message: document.getElementById('message').value.trim(),
+                timestamp: new Date().toISOString()
+            };
+
+            // 验证
+            if (!formData.name || !formData.email) {
+                alert('请填写姓名和邮箱（必填项）');
+                return;
+            }
+
+            // 模拟保存到本地存储
+            let registrations = [];
+            try {
+                const stored = localStorage.getItem('holovision_registrations');
+                if (stored) {
+                    registrations = JSON.parse(stored);
+                }
+            } catch (err) {
+                registrations = [];
+            }
+            registrations.push(formData);
+            localStorage.setItem('holovision_registrations', JSON.stringify(registrations));
+
+            // 显示成功提示
+            formSuccess.classList.add('visible');
+
+            // 重置表单
+            registerForm.reset();
+
+            // 5秒后隐藏成功提示
+            setTimeout(() => {
+                formSuccess.classList.remove('visible');
+            }, 5000);
+
+            // 控制台输出（调试用）
+            console.log('注册数据已保存:', formData);
+            console.log('当前注册总数:', registrations.length);
+        });
+
+        // ===== 平滑滚动（浏览器原生支持，但增加更好的体验） =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                const target = document.querySelector(targetId);
+                if (target) {
+                    e.preventDefault();
+                    const navHeight = navbar.offsetHeight;
+                    const targetPosition = target.getBoundingClientRect().top + window.scrollY - navHeight;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
